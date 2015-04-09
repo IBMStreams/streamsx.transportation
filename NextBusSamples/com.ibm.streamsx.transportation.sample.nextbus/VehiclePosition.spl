@@ -1,0 +1,47 @@
+namespace com.ibm.streamsx.transportation.sample.nextbus ;
+
+// ************************************************************************
+// * Copyright (C)2014,2015, International Business Machines Corporation and
+// * others. All Rights Reserved.
+// ************************************************************************
+
+use com.ibm.streamsx.transportation.nextbus::AgencyVehicleLocationPoll ;
+use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
+use com.ibm.streamsx.inet.rest::HTTPTupleView ;
+use com.ibm.streamsx.datetime.convert::*;
+
+public composite VehiclePosition
+{
+    param
+          expression<rstring> $agency : getSubmissionTimeValue("agency", "sf-muni");
+          expression<float64> $ageOutTime : minutes(15);
+          expression<int32> $port : 8080;
+
+	graph
+		stream<NextBusLocation> VLX = AgencyVehicleLocationPoll()
+		{
+			param
+				agency : $agency;
+		}
+
+		() as ViewLocations = HTTPTupleView(VLX)
+		{
+			window VLX : sliding, time($ageOutTime) ;
+		    param
+	          port: $port;
+			config
+			   placement: partitionColocation("jetty");
+		}
+		
+		() as LastPosition = HTTPTupleView(VLX)
+		{
+			window VLX : sliding, count(1), count(1), partitioned, partitionAge($ageOutTime);
+	        param
+	          partitionKey: "agency", "id";
+	          port: $port;
+	        config
+			   placement: partitionColocation("jetty");
+	          
+		}
+		config tracing: info;
+}

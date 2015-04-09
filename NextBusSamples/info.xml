@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<info:toolkitInfoModel xmlns:common="http://www.ibm.com/xmlns/prod/streams/spl/common" xmlns:info="http://www.ibm.com/xmlns/prod/streams/spl/toolkitInfo">
+  <info:identity>
+    <info:name>NextBusSamples</info:name>
+    <info:description>Samples for NextBus data</info:description>
+    <info:version>1.0.0</info:version>
+    <info:requiredProductVersion>4.0.0.0</info:requiredProductVersion>
+  </info:identity>
+  <info:dependencies>
+    <info:toolkit>
+      <common:name>com.ibm.streamsx.inet</common:name>
+      <common:version>[2.5.0,3.0.0)</common:version>
+    </info:toolkit>
+    <info:toolkit>
+      <common:name>com.ibm.streamsx.datetime</common:name>
+      <common:version>[1.0.0,2.0.0)</common:version>
+    </info:toolkit>
+    <info:toolkit>
+      <common:name>com.ibm.streamsx.transportation</common:name>
+      <common:version>[1.0.0,2.0.0)</common:version>
+    </info:toolkit>
+    <info:toolkit>
+      <common:name>com.ibm.streams.geospatial</common:name>
+      <common:version>[2.0.0,3.0.0)</common:version>
+    </info:toolkit>
+  </info:dependencies>
+</info:toolkitInfoModel>

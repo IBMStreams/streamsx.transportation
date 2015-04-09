@@ -1,0 +1,89 @@
+namespace com.ibm.streamsx.transportation.nextbus;
+
+// ************************************************************************
+// * Copyright (C)2014,2015, International Business Machines Corporation and
+// * others. All Rights Reserved.
+// ************************************************************************
+
+
+use com.ibm.streams.geospatial.twodimension.geometry::* ;
+use com.ibm.streamsx.datetime::TimeMillis ;
+use com.ibm.streamsx.transportation.vehicle::VehicleLocation;
+
+/**
+ * Cooked representation of a NextBus vehicle location.
+ */
+type NextBusLocation =
+    VehicleLocation,
+    tuple<
+    rstring agency, // agency
+    TimeMillis reportTime,
+    rstring routeTag, // route ID
+    rstring dirTag, // direction (inbound, outbound, etc.)
+    boolean predictable, // Is next arrival at a stop predictable?
+    int16 heading, // direction of travel, degrees from north
+    float64 speedKmHr // speed in km/h
+    >; 
+ 
+ 
+/**
+ * Poll to get the vehicle locations for a single agency.
+ * @param agency Agency to fetch the raw data from.
+ * @param period Period in seconds to poll the NextBus API, must not be less than 10. Defaults to 30.
+ */
+public composite AgencyVehicleLocationPoll(output VehicleLocations)
+{
+	param
+		expression<rstring> $agency ;
+                expression<float64> $period : 30.0;
+	graph
+		stream<RawVehicleLocation> RawVehicleLocations = AgencyRawVehicleLocationPoll()
+		{
+			param
+			    agency: $agency;
+				period : $period;
+		}
+		stream<NextBusLocation> VehicleLocations = CookVehicleLocation(RawVehicleLocations) {}
+}   
+    
+public composite CookVehicleLocation(
+     input stream<RawVehicleLocation> RawVehicleLocations;
+     output stream<NextBusLocation> VehicleLocations)
+{
+   graph
+   stream<NextBusLocation> VehicleLocations = Custom(RawVehicleLocations)
+   {
+       logic onTuple RawVehicleLocations:
+       {
+           // First ensure we can parse the numeric data successfully.
+           mutable int64 heading_ = 0l;
+           if (parseNumber(heading_, heading) == -1)
+               return;
+           mutable float64 speedKmHr_ = 0.0;
+           if (parseNumber(speedKmHr_, speedKmHr) == -1)
+               return;
+               
+           mutable float64 latitude_ = 0.0;
+           if (parseNumber(latitude_, latitude) == -1)
+               return;          
+           mutable float64 longitude_ = 0.0;
+           if (parseNumber(longitude_, longitude) == -1)
+               return;
+               
+           mutable TimeMillis secsSinceReport_ = 0l;
+           if (parseNumber(secsSinceReport_, secsSinceReport) == -1)
+               return;
+    
+           mutable NextBusLocation v = {};
+           assignFrom(v, RawVehicleLocations);
+           v.predictable = "true" == lower(predictable);
+           v.heading = (int16) heading_;
+           v.speedKmHr = speedKmHr_;
+           v.latitude = latitude_;
+           v.longitude = longitude_ ;
+           v.reportTime = lastTime - (secsSinceReport_ * 1000l);
+           
+           submit(v, VehicleLocations);
+       }
+   }
+}
