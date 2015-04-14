@@ -1,0 +1,37 @@
+namespace com.ibm.streamsx.transportation.vehicle;
+
+use com.ibm.streamsx.datetime::TimeMillis;
+
+/**
+ * Output type from [IdleVehicleDetection].
+ */
+type VehicleHangout = tuple<uint32 event,
+    TimeMillis startTime, TimeMillis endTime,
+    TimeMillis detectionTime,
+    list<rstring> hangoutGeoHashes>;
+
+/**
+ * Detect vehicles that have not moved for a time period.
+ */
+public composite IdleVehicleDetection(input VehicleLocations; output IdleVehicles) {
+    param
+       type $outType;
+       expression<float64> $minimumIdle;
+
+    graph
+     
+   stream<$outType> IdleVehicles = com.ibm.streams.geospatial::Hangout(VehicleLocations) {
+      param
+         geohashResolution: 50.0;
+         distanceThreshold: 25.0;
+         minimumDwellTime: (uint32) $minimumIdle;
+         timeStamp: reportTime;
+      output IdleVehicles:
+         event = HangoutEventType(),
+         startTime = HangoutStartTime(),
+         endTime = HangoutEndTime(),
+         detectionTime = HangoutDetectionTime(),
+         hangoutGeoHashes = HangoutGeohashAsStr();
+   } 
+}
+

@@ -6,9 +6,13 @@ namespace com.ibm.streamsx.transportation.sample.nextbus ;
 // ************************************************************************
 
 use com.ibm.streamsx.transportation.nextbus::AgencyVehicleLocationPoll ;
+use com.ibm.streamsx.transportation.nextbus::IdleBusDetection ;
 use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
+use com.ibm.streamsx.transportation.nextbus::NextBusHangout ;
 use com.ibm.streamsx.inet.rest::HTTPTupleView ;
 use com.ibm.streamsx.datetime.convert::*;
+
+type MARKER_TYPE = enum { GREEN, YELLOW, RED, WARNING } ;
 
 public composite VehiclePosition
 {
@@ -24,15 +28,9 @@ public composite VehiclePosition
 				agency : $agency;
 		}
 
-		() as ViewLocations = HTTPTupleView(VLX)
-		{
-			window VLX : sliding, time($ageOutTime) ;
-		    param
-	          port: $port;
-			config
-			   placement: partitionColocation("jetty");
-		}
-		
+                // Last positiion of each bus, this will be
+                // visible on the default map visualization
+                // by HTTPTupleView as it has an id, latitude and longitude.
 		() as LastPosition = HTTPTupleView(VLX)
 		{
 			window VLX : sliding, count(1), count(1), partitioned, partitionAge($ageOutTime);
@@ -43,5 +41,54 @@ public composite VehiclePosition
 			   placement: partitionColocation("jetty");
 	          
 		}
+
+                // Enriched last positiion of each bus, this will be
+                // also be visible on the default map visualization
+                // but has a marker colour specific to the bus's speed
+                // and a more informative note.
+		stream <VLX,tuple<MARKER_TYPE markerType, rstring note>>
+		       MVVL = Functor(VLX) {
+		       
+		       logic state: mutable MARKER_TYPE marker;
+		       onTuple VLX: {
+		          if (speedKmHr > 40.0)
+		              marker = MARKER_TYPE.GREEN;
+		          else if (speedKmHr == 0.0)
+		              marker = MARKER_TYPE.RED;
+		          else
+		              marker = MARKER_TYPE.YELLOW;
+		          }
+		       
+		       output MVVL:
+		          note = routeTag + " (" + id + ") @ "
+                                 + ((rstring) speedKmHr) + "km/h",
+		          markerType = marker;
+		}
+		
+		() as MapViewer = HTTPTupleView(MVVL)
+		{
+			window MVVL : sliding, count(1), count(1), partitioned, partitionAge($ageOutTime);
+		    param
+	             port: $port;
+	             partitionKey: "agency", "id";
+	        config
+			   placement: partitionColocation("jetty");
+		}
+
+                // Detect buses that have been idle for 3 mins (the default)
+                stream<NextBusHangout> IdleBuses = IdleBusDetection(VLX) {
+                 param minimumIdle: minutes(1);
+                }
+
+                // Just view them as a auto visualized table
+		() as IdleBusLocations = HTTPTupleView(IdleBuses)
+		{
+			window IdleBuses : sliding, count(40);
+		    param
+	          port: $port;
+			config
+			   placement: partitionColocation("jetty");
+		}
+
 		config tracing: info;
 }

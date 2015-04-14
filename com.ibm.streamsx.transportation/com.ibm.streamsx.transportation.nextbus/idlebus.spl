@@ -1,0 +1,23 @@
+namespace com.ibm.streamsx.transportation.nextbus;
+
+use com.ibm.streamsx.transportation.vehicle::VehicleHangout;
+use com.ibm.streamsx.transportation.vehicle::IdleVehicleDetection;
+use com.ibm.streamsx.datetime.convert::*;
+
+type NextBusHangout = VehicleHangout, NextBusLocation;
+
+public composite IdleBusDetection(input stream<NextBusLocation> BusLocations;
+     output IdleBuses) {
+
+   param
+       expression<float64> $minimumIdle : minutes(3);
+    
+   graph
+     
+   stream<NextBusHangout> IdleBuses = IdleVehicleDetection(BusLocations) {
+      param
+         outType: NextBusHangout;
+         minimumIdle: $minimumIdle;
+   } 
+}
+
