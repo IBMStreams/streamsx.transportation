@@ -17,7 +17,6 @@ type NextBusLocation =
     VehicleLocation,
     tuple<
     rstring agency, // agency
-    TimeMillis reportTime,
     rstring routeTag, // route ID
     rstring dirTag, // direction (inbound, outbound, etc.)
     boolean predictable, // Is next arrival at a stop predictable?
