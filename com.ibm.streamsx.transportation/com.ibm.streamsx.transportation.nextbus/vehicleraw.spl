@@ -17,7 +17,7 @@ use com.ibm.streamsx.datetime::TimeMillis ;
 */
 type RawVehicleLocation =
     rstring agency, // agency
-    rstring id, // vehicle ID
+    rstring nextbusId, //vehicle ID
     TimeMillis lastTime,
     rstring routeTag, // route ID
     rstring dirTag, // direction (inbound, outbound, etc.)
@@ -75,7 +75,7 @@ composite RawVehicleLocationPoll(output RawVehicleLocations )
              * Therefore, just get string results here and perform any numeric 
              * conversions, with appropriate protections, in the next operator.
              */
-				id = XPath("@id"), routeTag = XPath("@routeTag"), dirTag =
+				nextbusId = XPath("@id"), routeTag = XPath("@routeTag"), dirTag =
 					XPath("@dirTag"), latitude = XPath("@lat"), longitude = XPath("@lon"),
 					secsSinceReport = XPath("@secsSinceReport"), predictable =
 					XPath("@predictable"), heading = XPath("@heading"), speedKmHr =
