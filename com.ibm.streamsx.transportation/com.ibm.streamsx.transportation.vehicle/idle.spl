@@ -4,34 +4,51 @@ use com.ibm.streamsx.datetime::TimeMillis;
 
 /**
  * Output type from [IdleVehicleDetection].
+ * 
+ * * idle - Is the vehicle idle
+ * * duration - Number of seconds the vehicle has been idle
+ * * geohash - Geohash in base 32 the vehicle is in if `idle` is true, otherwise an empty string.
  */
-type VehicleHangout = tuple<uint32 event,
-    TimeMillis startTime, TimeMillis endTime,
-    TimeMillis detectionTime,
-    list<rstring> hangoutGeoHashes>;
+type VehicleIdle = tuple<boolean idle, uint64 duration, rstring geohash>;
 
 /**
  * Detect vehicles that have not moved for a time period.
+ * Augments the input tuple type with [VehicleIdle], any
+ * input attributes are copied into the output tuple.
+ * 
+ * This is a wrapper around `com.ibm.streams.geospatial::Hangout` with
+ * defaults suitable for a vehicle. The default settings match to the vehicle
+ * being idle if it is in an 100mx100m (approximately) box (at the equator).
+ * 
+ * For details on how to configure see the documentation for `com.ibm.streams.geospatial::Hangout`.
+ * 
+ * @param minimumIdle Time a vehicle must within a region to be seen as idle in seconds. 
+ * @param geohashBitDepth Number of bits used to determine the size of each Geohash region. Defaults to `37u` which is approximately a 75m square at the equator.
+ * @param precision Specifies the distance, in meters, by which the computed boundaries of each Geohash region will be extended on all sides. Defaults to 25m.
+ * @param timeoutFactor Specifies the timeout as a factor of `minimumIdle`. If no tuples have arrived for 
+ * 
+ * @input VehicleLocations Vehicle locations, must be a schema that extends [VehicleLocation].
+ * @output VehicleLocationsIdle Input tuples augmented with idle information, the schema is the input schema augmented with [VehicleIdle].
  */
-public composite IdleVehicleDetection(input VehicleLocations; output IdleVehicles) {
+public composite IdleVehicleDetection(input VehicleLocations; output VehicleLocationsIdle) {
     param
-       type $outType;
        expression<float64> $minimumIdle;
-
+       expression<uint32> $geohashBitDepth : 37u;
+       expression<float64> $precision : 25.0;
+       expression<uint32> $timeoutFactor : 10u;
     graph
      
-   stream<$outType> IdleVehicles = com.ibm.streams.geospatial::Hangout(VehicleLocations) {
+   stream<VehicleLocations, VehicleIdle> VehicleLocationsIdle = com.ibm.streams.geospatial::Hangout(VehicleLocations) {
       param
-         geohashResolution: 50.0;
-         distanceThreshold: 25.0;
          minimumDwellTime: (uint32) $minimumIdle;
+         geohashBitDepth: $geohashBitDepth;
+         precision: $precision;
          timeStamp: reportTime;
-      output IdleVehicles:
-         event = HangoutEventType(),
-         startTime = HangoutStartTime(),
-         endTime = HangoutEndTime(),
-         detectionTime = HangoutDetectionTime(),
-         hangoutGeoHashes = HangoutGeohashAsStr();
+         timeout: (uint32) ($minimumIdle * (float64) $timeoutFactor);
+      output VehicleLocationsIdle:
+         idle = IsInHangout(),
+         duration = HangoutDuration(),
+         geohash = HangoutGeohashBase32();
    } 
 }
 
