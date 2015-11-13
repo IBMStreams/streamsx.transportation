@@ -12,11 +12,16 @@ use com.ibm.streamsx.transportation.vehicle::VehicleLocation;
 
 /**
  * Cooked representation of a NextBus vehicle location.
+ * 
+ * * agency - Nextbus agency
+ * * nextbusId - Nextbus identifier reported by NextBus (as `id`)
+ * * id - *nextbusId*`:`*agency*`:nextbus` - Unique identifier to allow use of id in operators that utilize a single attribute for an identifier.
  */
 type NextBusLocation =
     VehicleLocation,
     tuple<
     rstring agency, // agency
+    rstring nextbusId, // next bus vehicle id
     rstring routeTag, // route ID
     rstring dirTag, // direction (inbound, outbound, etc.)
     boolean predictable, // Is next arrival at a stop predictable?
@@ -75,12 +80,14 @@ public composite CookVehicleLocation(
     
            mutable NextBusLocation v = {};
            assignFrom(v, RawVehicleLocations);
+           v.id = nextbusId + ":" + agency + ":nextbus";
            v.predictable = "true" == lower(predictable);
            v.heading = (int16) heading_;
            v.speedKmHr = speedKmHr_;
            v.latitude = latitude_;
            v.longitude = longitude_ ;
            v.reportTime = lastTime - (secsSinceReport_ * 1000l);
+           
            
            submit(v, VehicleLocations);
        }
