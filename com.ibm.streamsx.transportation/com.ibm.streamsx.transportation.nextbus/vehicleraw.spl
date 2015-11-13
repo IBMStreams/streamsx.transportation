@@ -1,10 +1,9 @@
-namespace com.ibm.streamsx.transportation.nextbus ;
-
 // ************************************************************************
 // * Copyright (C)2014,2015, International Business Machines Corporation and
 // * others. All Rights Reserved.
 // ************************************************************************
 
+namespace com.ibm.streamsx.transportation.nextbus ;
 
 use com.ibm.streamsx.inet.http::HTTPGetXMLContent ;
 use com.ibm.streamsx.datetime::currentTimeMillis ;
@@ -14,6 +13,8 @@ use com.ibm.streamsx.datetime::TimeMillis ;
 * Stream type for the structured representation of all the raw data items in 
 * a location record, along with the document (query) timestamp.
 * NOTE: rstring attributes only, to avoid conversion errors.
+* 
+* @exclude
 */
 type RawVehicleLocation =
     rstring agency, // agency
@@ -31,6 +32,7 @@ type RawVehicleLocation =
 
 /**
 * Poll to fetch the raw vehicle locations.
+* @exclude
 */
 composite RawVehicleLocationPoll(output RawVehicleLocations )
 {
@@ -135,6 +137,7 @@ composite RawVehicleLocationPoll(output RawVehicleLocations )
  * Poll to get the raw vehicle locations for a single agency.
  * @param agency Agency to fetch the raw data from.
  * @param period Period in seconds to poll the NextBus API, must not be less than 10. Defaults to 30.
+ * @exclude
  */
 public composite AgencyRawVehicleLocationPoll(output RawVehicleLocations )
 {
