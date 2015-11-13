@@ -15,6 +15,9 @@ use com.ibm.streamsx.datetime.convert::*;
 
 type MARKER_TYPE = enum { GREEN, YELLOW, RED, WARNING } ;
 
+/**
+ * Fetch NextBus® vehicle location with idle bus detection.
+ */
 public composite VehiclePosition
 {
     param
