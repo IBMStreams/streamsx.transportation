@@ -1,3 +1,8 @@
+// ************************************************************************
+// * Copyright (C)2014,2015, International Business Machines Corporation and
+// * others. All Rights Reserved.
+// ************************************************************************
+
 namespace com.ibm.streamsx.transportation.vehicle;
 
 use com.ibm.streamsx.datetime::TimeMillis;

@@ -1,5 +1,10 @@
+// ************************************************************************
+// * Copyright (C)2014,2015, International Business Machines Corporation and
+// * others. All Rights Reserved.
+// ************************************************************************
+
 /**
- * Integration of NextBus Public XML feed with IBM InfoSphere Streams.
+ * Integration of NextBus® Public XML feed with IBM Streams.
  * Terms and conditions for use of the feed is documented here:
  * [http://www.nextbus.com/xmlFeedDocs/NextBusXMLFeed.pdf]
  * 
@@ -11,11 +16,6 @@ only be run at the most once every 10 seconds*.
  */
 
 namespace com.ibm.streamsx.transportation.nextbus;
-
-// ************************************************************************
-// * Copyright (C)2014,2015, International Business Machines Corporation and
-// * others. All Rights Reserved.
-// ************************************************************************
 
 /**
  * Returns the base URL for the NExtBus public XML feed.
