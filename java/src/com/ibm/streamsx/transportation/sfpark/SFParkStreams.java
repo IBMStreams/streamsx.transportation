@@ -22,18 +22,20 @@ public class SFParkStreams {
 	/**
 	 * Publish a standard JSON stream containing parking spaces that
 	 * report with availability under the topic:
-	 * {@code "/streamsx/transportation/sfpark/availability"}.
+	 * {@code "streamsx/transportation/sfpark/availability"}.
 	 */
 	public static TStream<JSONObject> availibilityLocations(Topology topology, boolean publish) {
 		TStream<JSONObject> spaces = locationsWithAvailability(sfparkSpaces(topology));
 		if (publish)
-			spaces.publish("/streamsx/transportation/sfpark/availability");
+			spaces.publish("streamsx/transportation/sfpark/availability");
 		return spaces;
 	}
 
-    // Declare a stream of JSONObject, each representing
-    // a parking space within 1.5 miles of the
-    // IBM Spark Technology Center
+    /*
+     *  Declare a stream of JSONObject, each representing
+     * a parking space within 5 miles of the center of
+     * San Francisco.
+    */
     public static TStream<JSONObject> sfparkSpaces(Topology topology) {
 
         // Available parking within 5 miles of the the center of SF
