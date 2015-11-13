@@ -27,6 +27,7 @@ public composite VehiclePosition
 		{
 			param
 				agency : $agency;
+				period : (float64) getSubmissionTimeValue("period", "30.0");
 		}
 		
 		        // Last position of each bus, this will be
@@ -36,7 +37,7 @@ public composite VehiclePosition
 		{
 			window VLX : sliding, count(1), count(1), partitioned, partitionAge($ageOutTime);
 	        param
-	          partitionKey: "agency", "id";
+	          partitionKey: "id";
 	          port: $port;
 	        config
 			   placement: partitionColocation("jetty");
@@ -81,7 +82,7 @@ public composite VehiclePosition
 			window MVVL : sliding, count(1), count(1), partitioned, partitionAge($ageOutTime);
 		    param
 	             port: $port;
-	             partitionKey: "agency", "id";
+	             partitionKey: "id";
 	        config
 			   placement: partitionColocation("jetty");
 		}
