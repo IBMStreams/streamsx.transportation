@@ -8,6 +8,7 @@ namespace com.ibm.streamsx.transportation.nextbus;
 use com.ibm.streams.geospatial.twodimension.geometry::* ;
 use com.ibm.streamsx.datetime::TimeMillis ;
 use com.ibm.streamsx.transportation.vehicle::VehicleLocation;
+use com.ibm.streamsx.transportation.vehicle::VehicleIdle ;
 
 /**
  * NextBus vehicle location.
@@ -36,6 +37,12 @@ type NextBusLocation =
     float64 speedKmHr // speed in km/h
     >; 
  
+/**
+ * NextBus vehicle location with Idle.
+ *
+ * Combination of [NextBusLocation] and [VehicleIdle].
+*/
+type NextBusLocationIdle = NextBusLocation, VehicleIdle;
  
 /**
  * Poll to get the vehicle locations for a single agency.
