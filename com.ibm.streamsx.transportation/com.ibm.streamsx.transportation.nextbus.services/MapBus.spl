@@ -19,16 +19,6 @@ use com.ibm.streamsx.inet.rest::MappedPositionMarkerLayer;
  * The published mapped location stream sets:
  *  * `markerType`:
  *    * RED - Stationary
-use com.ibm.streamsx.inet.rest::MarkerType;
-use com.ibm.streamsx.inet.rest::MappedPositionMarkerLayer;
-
-/**
- * Microservice that subscribes to all NextBus® location streams
- * and publishes a single stream of locations suitable for mapping.
- *
- * The published mapped location stream sets:
- *  * `markerType`:
- *    * RED - Stationary
  *    * YELLOW - Bus is moving at less than or equal to 40km/h.
  *    * GREEN - Bus is moving at more than 40km/h.
  *    * WARNING - Bus is marked as idle
@@ -44,7 +34,7 @@ use com.ibm.streamsx.inet.rest::MappedPositionMarkerLayer;
  *  * topic: `streamsx/transportation/mapping/locations`
  *  * type: `com.ibm.streamsx.inet.rest::MappedPositionMarkerLayer`
  */
-public composite MapBusLocation
+public composite MapBusLocations
 {
 	graph
            stream<NextBusLocationIdle> VLXWithIdle = Subscribe() {
