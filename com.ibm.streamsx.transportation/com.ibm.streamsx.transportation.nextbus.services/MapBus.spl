@@ -1,16 +1,17 @@
 namespace com.ibm.streamsx.transportation.nextbus.services;
 
 // ************************************************************************
-// * Copyright (C)2014,2015, International Business Machines Corporation and
+// * Copyright (C)2014,2016, International Business Machines Corporation and
 // * others. All Rights Reserved.
 // ************************************************************************
 
 use com.ibm.streamsx.transportation.nextbus::NextBusLocationIdle ;
+use com.ibm.streamsx.transportation.mapping::headingArrowValue ;
 use com.ibm.streamsx.datetime.convert::*;
 use com.ibm.streamsx.topology.topic::Subscribe;
 use com.ibm.streamsx.topology.topic::Publish;
 use com.ibm.streamsx.inet.rest::MarkerType;
-use com.ibm.streamsx.inet.rest::MappedPositionMarkerLayer;
+use com.ibm.streamsx.inet.rest::MappedPositionIconLayer;
 
 /**
  * Microservice that subscribes to all NextBus® location streams
@@ -32,7 +33,7 @@ use com.ibm.streamsx.inet.rest::MappedPositionMarkerLayer;
  *
  * Publishes:
  *  * topic: `streamsx/transportation/mapping/locations`
- *  * type: `com.ibm.streamsx.inet.rest::MappedPositionMarkerLayer`
+ *  * type: `com.ibm.streamsx.inet.rest::MappedPositionIconLayer`
  */
 public composite MapBusLocations
 {
@@ -48,7 +49,7 @@ public composite MapBusLocations
                 // also be visible on the default map visualization
                 // but has a marker colour specific to the bus's speed
                 // and a more informative note.
-		stream <MappedPositionMarkerLayer>
+		stream <MappedPositionIconLayer>
 		       MVVL = Functor(VLXWithIdle) {
 		       
 		       logic state: mutable MarkerType marker;
@@ -65,10 +66,10 @@ public composite MapBusLocations
 		       
 		       output MVVL:
 		          note = routeTag + " (" + id + ") @ "
-                                 + ((rstring) speedKmHr) + "km/h"
-                                 + (idle ? (" Idle! " + (rstring) duration + "seconds"): ""),
+                                 + ((rstring) speedKmHr) + "km/h "
+                                 + (idle ? ("Idle! " + (rstring) duration + "seconds"): headingArrowValue(heading)),
                           layer=agency,
-		          markerType = marker;
+		          markerType = (rstring) marker;
 		}
 
                 () as MappedBusLocations = Publish(MVVL) {
