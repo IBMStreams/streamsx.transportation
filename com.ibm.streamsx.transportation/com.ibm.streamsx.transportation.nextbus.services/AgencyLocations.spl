@@ -46,6 +46,10 @@ public composite AgencyLocations
 		}
 
 	   // Augment with info if the bus has  been idle for 3 minutes
+       @view(name="NextBus® Locations", port=VLXWithIdle,
+          description="NextBus® vehicle locations with idle detection: ",
+          sampleSize=1000, bufferTime=300.0
+          )
        stream<NextBusLocationIdle> VLXWithIdle = IdleVehicleDetection(VLX) {
           param minimumIdle: minutes((int32) $idleMinutes);
        }
