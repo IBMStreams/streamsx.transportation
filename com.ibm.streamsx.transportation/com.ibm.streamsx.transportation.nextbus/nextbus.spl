@@ -18,7 +18,7 @@ only be run at the most once every 10 seconds*.
 namespace com.ibm.streamsx.transportation.nextbus;
 
 /**
- * Returns the base URL for the NExtBus public XML feed.
+ * Returns the base URL for the NextBus public XML feed.
  * @return http://webservices.nextbus.com/service/publicXMLFeed
  */
 public rstring baseUrl() {
