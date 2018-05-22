@@ -1,0 +1,91 @@
+
+// ************************************************************************
+// * Copyright (C)2018, International Business Machines Corporation and
+// * others. All Rights Reserved.
+// ************************************************************************
+namespace com.ibm.streamsx.transportation.hangout.demo ;
+
+use com.ibm.streamsx.transportation.nextbus::AgencyVehicleLocationPoll ;
+use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
+
+use com.ibm.streamsx.datetime.convert::* ;
+use com.ibm.streams.geospatial::Hangout ;
+use com.ibm.streamsx.topology.topic::* ;
+
+/**
+ * This composite serves as a data source, retrieving NextBus data, augmenting that stream with
+ * hangout detection, and then publishing that data as a stream for use by the other applications in this namespace.
+ * Works with NextBus data for any of the supported municipalities.
+ * @param agency id of transit agency to use. This application will retrieve data for buses in that city or municipality.
+ * See http://webservices.nextbus.com/service/publicXMLFeed?command=agencyList for a list of the available agencies.
+ * Default sf-muni is for San Fransisco.
+ * @param sampleLatitude sample latitude of the area where the buses are, default to 37 for San Fransisco.
+ */
+composite SimpleNextBusHangout
+{
+	param
+		
+		expression<rstring> $agency : getSubmissionTimeValue("agency", "sf-muni");
+		expression<float64> $minimumIdleInMinutes: (float64)getSubmissionTimeValue("idleTime", "3");
+        expression<float64> $sampleLatitude :(float64) getSubmissionTimeValue("sampleLatitude", "37");
+     graph
+		stream<NextBusLocation> BusLocationStream = AgencyVehicleLocationPoll()
+		{
+			param
+				agency : $agency ;
+				period :(float64) getSubmissionTimeValue("period", "30.0") ;
+		}
+		//
+		// Augment with info if the bus has  been idle for 3 minutes
+		stream<HangoutOutput> BusLocation_WithHangouts = Hangout(BusLocationStream)
+		{
+			param
+				minimumDwellTime :(uint32) minutes($minimumIdleInMinutes ) ;
+				cellSize : (float64)getSubmissionTimeValue("hangoutCellSize", "75"); //geohash cells of 75m x 75 m
+				sampleLatitude : $sampleLatitude ; //use 37 for San fransisco area
+				precision : 15.0 ;
+				timeStamp : reportTime ;
+			output
+				BusLocation_WithHangouts : 
+				idle = IsInHangout(), 
+				duration = HangoutDuration(), 
+				geohash = HangoutGeohashBase32() ;
+		}
+
+		// Export for use by other analytics
+		() as PublishHangoutDetection = Publish(BusLocation_WithHangouts)
+		{
+			param
+				topic : "BusAndHangoutData" ;
+		}
+
+		stream<HangoutOutput> IdleBusesOnly = Filter(BusLocation_WithHangouts as
+			HangoutDetectionOutput)
+		{
+			param
+				filter : idle ;
+		}
+
+		() as PublishIdleBuses= Publish(IdleBusesOnly)
+		{
+			param
+				topic : "IdleBusesOnly" ;
+		}
+
+
+		() as HangoutPrinter = Custom(IdleBusesOnly as In0)
+		{
+			logic
+				onTuple In0 :
+				{
+					rstring time =(rstring) In0.duration ;
+					printStringLn("Bus " + id + " has been  idle at geohash " + In0.geohash +
+						" for " + time + " seconds.") ;
+				}
+			config
+						placement : partitionExlocation("printer") ;
+			
+
+		}
+
+}

@@ -1,0 +1,13 @@
+namespace com.ibm.streamsx.transportation.hangout.demo ;
+use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
+use com.ibm.streamsx.transportation.vehicle::VehicleIdle ;
+
+type HangoutsByGeohash = int64 firstReportTime, list<rstring> buses_in_hash, int32 busCountPerHash,
+			rstring geohash, int32 total_geohashes;
+type GroupHangoutsByGeohash = rstring firstTsString, int64 firstReportTime, list<rstring> buses_in_hash, int32 busCountPerHash,
+			rstring geohash;
+			
+type HangoutOutput = NextBusLocation, VehicleIdle ;
+type HangoutSummary = rstring id, uint64 totalHangoutDuration, rstring geohash,
+	int64 lastSeenTime, float64 lastSeenLatitude, float64 lastSeenLongitude ;
+type GeohashAndCount =tuple<rstring geohash, int32 count>;

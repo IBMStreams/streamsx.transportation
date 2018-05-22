@@ -18,7 +18,7 @@ type MARKER_TYPE = enum { GREEN, YELLOW, RED, WARNING } ;
 /**
  * Fetch NextBus® vehicle location with idle bus detection.
  */
-public composite VehiclePosition
+public composite MapVehiclePosition
 {
     param
           expression<rstring> $agency : getSubmissionTimeValue("agency", "sf-muni");
