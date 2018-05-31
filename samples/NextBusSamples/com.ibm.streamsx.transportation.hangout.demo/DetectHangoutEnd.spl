@@ -1,0 +1,55 @@
+
+// ************************************************************************
+// * Copyright (C)2018, International Business Machines Corporation and
+// * others. All Rights Reserved.
+// ************************************************************************
+namespace com.ibm.streamsx.transportation.hangout.demo ;
+
+use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
+
+use com.ibm.streams.cep::* ;
+use com.ibm.streamsx.topology.topic::* ;
+/***
+ * This composite just detects when a hangout ends and prints a message summarizing the hangout to the console.
+ * Subscribes to the output stream published by SimpleNextBusHangout, so that application must be running first.
+ */
+composite DetectHangoutEnd
+{
+	graph
+		stream<HangoutOutput> HangoutDetectionOutput = Subscribe()
+		{
+			param
+				topic : "BusAndHangoutData" ;
+				streamType : HangoutOutput ;
+		}
+		// Use the complex event processing operator MatchRegex to determine when an entity stops hanging out
+		stream<HangoutSummary> Case1_HangoutSummaries =
+			MatchRegex(HangoutDetectionOutput)
+		{
+			param
+				partitionBy : id ;
+				//The pattern is a tuple with hangingOut = true immediately followed by a tuple with isHangingOut = false
+				pattern : "hangout stop" ;
+				predicates : { hangout = idle == true, stop = idle == false } ;
+			output
+				Case1_HangoutSummaries : totalHangoutDuration = Max(duration), //the duration is the total time in that hangout, so use Max to get the highest reported duration
+				id = Any(id), geohash = First(geohash), lastSeenLatitude = First(latitude),
+					lastSeenLongitude = First(longitude), lastSeenTime = First(reportTime) ;
+		}
+		// log hangout start and stop to console
+		() as Case1_PrintHangoutSummary = Custom(Case1_HangoutSummaries as I)
+		{
+			logic
+				onTuple I :
+				{
+					float64 durationInMinutes =((float64) I.totalHangoutDuration) / 60.0 ;
+					printStringLn("Bus " + I.id + " spent " + formatNumber(durationInMinutes)
+						+ " minutes at geohash " + I.geohash + ", last seen there at " +
+						ctime(createTimestamp(lastSeenTime / 1000l, 0u))) ;
+				}
+
+			config
+				placement : partitionExlocation("printer") ;
+		}
+
+}

@@ -4,7 +4,7 @@
     <info:name>NextBusSamples</info:name>
     <info:description>Samples for NextBus data</info:description>
     <info:version>1.0.0</info:version>
-    <info:requiredProductVersion>4.0.0.0</info:requiredProductVersion>
+    <info:requiredProductVersion>4.2.0.0</info:requiredProductVersion>
   </info:identity>
   <info:dependencies>
     <info:toolkit>
@@ -16,12 +16,20 @@
       <common:version>[1.0.0,2.0.0)</common:version>
     </info:toolkit>
     <info:toolkit>
-      <common:name>com.ibm.streamsx.transportation</common:name>
-      <common:version>[1.1.0,2.0.0)</common:version>
-    </info:toolkit>
-    <info:toolkit>
       <common:name>com.ibm.streams.geospatial</common:name>
       <common:version>[3.0.0,4.0.0)</common:version>
+    </info:toolkit>
+    <info:toolkit>
+      <common:name>com.ibm.streamsx.transportation</common:name>
+      <common:version>[1.4.0,2.0.0)</common:version>
+    </info:toolkit>
+    <info:toolkit>
+      <common:name>com.ibm.streams.cep</common:name>
+      <common:version>[2.1.0,3.0.0)</common:version>
+    </info:toolkit>
+    <info:toolkit>
+      <common:name>com.ibm.streamsx.topology</common:name>
+      <common:version>[1.7.4,2.0.0)</common:version>
     </info:toolkit>
   </info:dependencies>
 </info:toolkitInfoModel>

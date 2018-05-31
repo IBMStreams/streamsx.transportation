@@ -1,0 +1,181 @@
+namespace com.ibm.streamsx.transportation.hangout.demo ;
+use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
+
+// ************************************************************************
+// * Copyright (C)2018, International Business Machines Corporation and
+// * others. All Rights Reserved.
+// ************************************************************************
+use com.ibm.streamsx.datetime.convert::* ;
+
+
+use com.ibm.streamsx.topology.topic::* ;
+/*
+ * As the name implies, this composite detects 2 things:
+ * 1) when 2 or more buses are hanging out in the same geohash
+ * 2) the top K geohashes based on number of buses hanging out in a geohash, where K is the numberToRank parameter.
+ * @param groupDwellTime the amount of time a bus must be within the geohash with other buses present, in milliseconds. Since a hangout is only detected
+ * when the bus has been there for at least 5 minutes, a small value like 90 seconds suffices in this case.
+ * @param numberToRank the value for K when computing the top K and bottom K values.
+ * This composite Subscribes to the output stream published by SimpleNextBusHangout, so that application must be running first.
+ * To detect more group hangouts:
+ * 	you can decrease the dwell time in the SimpleNextBusHangout  and/or increase the cell size.
+ 
+ */
+public composite GroupAndRankHangouts
+{
+	param
+		expression<int64> $groupDwellTime: 90000l;
+		expression<int32> $topK : (int32) getSubmissionTimeValue("numberToRank", "5");
+	graph
+		
+
+		stream<HangoutOutput> IdleBusStream = Subscribe()
+		{
+			param
+				topic : "IdleBusesOnly" ;
+				streamType : HangoutOutput ;
+		}
+		stream<HangoutsByGeohash> HangoutsByGeohash_ =
+			Aggregate(IdleBusStream as in0)
+		{
+			window
+				in0 : tumbling, delta(reportTime, $groupDwellTime) ;
+			param
+				groupBy : geohash ;
+			output
+				HangoutsByGeohash_ : total_geohashes = CountGroups(),
+				buses_in_hash = CollectDistinct(id), busCountPerHash =
+					CountDistinct(id), geohash = Any(geohash), firstReportTime = Min(reportTime);
+		}
+
+		stream<GroupHangoutsByGeohash> Filter_19_out0 = Functor(HangoutsByGeohash_ as inputStream)
+		{
+			param
+				filter : busCountPerHash >= 2 ;
+			output
+				Filter_19_out0 : firstTsString = ctime(createTimestamp(firstReportTime / 1000l,
+					0u)) ;
+		}
+		
+		stream<GroupHangoutsByGeohash> SortedDetailedHangout = Sort(Filter_19_out0 as in0){
+			
+			window
+			 in0: tumbling, punct();
+			param
+				sortBy: firstReportTime;
+				order: ascending;
+		}
+		
+		
+		
+		
+		
+		stream<list<int32> busesPerGeohash, list<rstring> geohashList,
+			int64 first_arrival_timeStamp> HangoutStats =
+			Aggregate(HangoutsByGeohash_)
+		{
+			window
+				HangoutsByGeohash_ : tumbling, punct() ;
+			output
+				HangoutStats : busesPerGeohash = Collect(busCountPerHash),
+					geohashList = Collect(geohash), first_arrival_timeStamp =
+					Min(firstReportTime) ;
+		}
+		
+
+		stream<list<GeohashAndCount> topHashes, 
+			int64 first_arrival_timeStamp, rstring firstArrivalTimeString> TopKHangouts as Out =
+			Functor(HangoutStats as In)
+		{
+			logic
+				state :
+				{
+					
+					mutable list<uint32> topIndices ;
+					mutable list<GeohashAndCount> topHashList = [];
+				}
+
+				onTuple In :
+				{
+					list<uint32> sortedIndices= sortIndices(busesPerGeohash);
+					topIndices = reverse(sortedIndices);
+					if(size(sortedIndices) > $topK) topIndices = slice(topIndices, 0, $topK) ;
+					 clearM(topHashList);
+					for (uint32 index in topIndices){
+						mutable GeohashAndCount t = {};
+						t.count = busesPerGeohash[index];
+						t.geohash = geohashList[index];
+						  appendM(topHashList, t);
+					}
+				}
+
+				output
+					Out : topHashes = topHashList,
+						firstArrivalTimeString = ctime(createTimestamp(first_arrival_timeStamp / 1000l, 0u)) ;
+
+			}
+
+		stream<list<rstring> bottomHashes, list<int32> busesPerGeohash,
+			int64 first_arrival_timeStamp, rstring firstArrivalTimeString> BottomKHangouts as Out =
+				Functor(HangoutStats as In)
+			{
+				logic
+					state :
+					{
+						mutable list<uint32> indices ;
+						mutable list<uint32> bottomIndices ;
+					}
+
+					onTuple In :
+					{
+						indices = sortIndices(busesPerGeohash) ;
+						if(size(indices) > $topK) indices = slice(indices, 0, $topK) ;
+					}
+
+					output
+						Out : bottomHashes = at(geohashList, indices), busesPerGeohash =
+							at(busesPerGeohash, indices), firstArrivalTimeString =
+							ctime(createTimestamp(first_arrival_timeStamp / 1000l, 0u)) ;
+
+				}
+
+			() as GroupHangoutPrinter = Custom(SortedDetailedHangout as In0){
+				logic
+					onTuple In0 :
+						{
+							
+							printStringLn("There are " + (rstring) In0.busCountPerHash + "  buses hanging out at geohash " + In0.geohash + ", the buses are " + (rstring)buses_in_hash + ".");
+						}
+				config
+						placement : partitionExlocation("printer") ;
+			}	
+		
+			() as TopKPrinter = Custom(TopKHangouts as In0)
+				{
+					logic
+						onTuple In0 :
+					{
+						rstring timeInSeconds = (rstring) ($groupDwellTime/1000l);
+						printStringLn("\n********Top Hangouts for the " + timeInSeconds + " second period starting at " + firstArrivalTimeString + " *************:");
+						for (GeohashAndCount t in topHashes){
+							printStringLn((rstring) t.count + "  buses at  " +  t.geohash);
+						}
+						printStringLn("**************************************");
+
+					}
+					config
+						placement : partitionExlocation("printer") ;
+			
+				}
+
+			() as BottomKSink = FileSink(BottomKHangouts as inPort0Alias)
+				{
+					param
+						file : "unpopular.txt" ;
+						flush : 1u ;
+				}
+
+
+		}
+
+	

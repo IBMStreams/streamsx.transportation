@@ -1,5 +1,5 @@
 // ************************************************************************
-// * Copyright (C)2014,2015, International Business Machines Corporation and
+// * Copyright (C)2014,2018, International Business Machines Corporation and
 // * others. All Rights Reserved.
 // ************************************************************************
 
@@ -23,12 +23,13 @@ type VehicleIdle = tuple<boolean idle, uint64 duration, rstring geohash>;
  * 
  * This is a wrapper around `com.ibm.streams.geospatial::Hangout` with
  * defaults suitable for a vehicle. The default settings match to the vehicle
- * being idle if it is in an 100mx100m (approximately) box (at the equator).
+ * being idle if it is in an 75mx75m (approximately) box.
  * 
  * For details on how to configure see the documentation for `com.ibm.streams.geospatial::Hangout`.
  * 
  * @param minimumIdle Time a vehicle must within a region to be seen as idle in seconds. 
- * @param geohashBitDepth Number of bits used to determine the size of each Geohash region. Defaults to `37u` which is approximately a 75m square at the equator.
+ * @param $geohashCellSize The extent of each Geohash region, in meters. Default is 75.0, which corresponds to geohash cells of roughly 75m x 75m in size.
+ * @param $sampleLatitude  Value indicating the latitude of the general area where the data is coming from. Default is 37, which corresponds to the San Fransisco area.
  * @param precision Specifies the distance, in meters, by which the computed boundaries of each Geohash region will be extended on all sides. Defaults to 25m.
  * @param timeoutFactor Specifies the timeout as a factor of `minimumIdle`. If no tuples have arrived for 
  * 
@@ -38,7 +39,10 @@ type VehicleIdle = tuple<boolean idle, uint64 duration, rstring geohash>;
 public composite IdleVehicleDetection(input VehicleLocations; output VehicleLocationsIdle) {
     param
        expression<float64> $minimumIdle;
-       expression<uint32> $geohashBitDepth : 37u;
+       expression<float64> $sampleLatitude: 37.0;
+       
+       expression<float64> $geohashCellSize : 75.0;
+       
        expression<float64> $precision : 25.0;
        expression<uint32> $timeoutFactor : 10u;
     graph
@@ -46,9 +50,10 @@ public composite IdleVehicleDetection(input VehicleLocations; output VehicleLoca
    stream<VehicleLocations, VehicleIdle> VehicleLocationsIdle = com.ibm.streams.geospatial::Hangout(VehicleLocations) {
       param
          minimumDwellTime: (uint32) $minimumIdle;
-         geohashBitDepth: $geohashBitDepth;
+         cellSize: $geohashCellSize;
          precision: $precision;
          timeStamp: reportTime;
+         sampleLatitude: $sampleLatitude;
          timeout: (uint32) ($minimumIdle * (float64) $timeoutFactor);
       output VehicleLocationsIdle:
          idle = IsInHangout(),

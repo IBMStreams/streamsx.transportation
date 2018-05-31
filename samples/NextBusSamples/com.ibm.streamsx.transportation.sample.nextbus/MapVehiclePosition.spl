@@ -18,10 +18,13 @@ type MARKER_TYPE = enum { GREEN, YELLOW, RED, WARNING } ;
 /**
  * Fetch NextBus® vehicle location with idle bus detection.
  */
-public composite VehiclePosition
+public composite MapVehiclePosition
 {
     param
           expression<rstring> $agency : getSubmissionTimeValue("agency", "sf-muni");
+	  
+          //Sample latitude of the area where the buses are, default to 37 for San Fransisco
+          expression<float64> $sampleLatitude :(float64) getSubmissionTimeValue("sampleLatitude", "37");
           expression<float64> $ageOutTime : minutes(15);
           expression<int32> $port : 8080;
 
@@ -50,6 +53,7 @@ public composite VehiclePosition
 	   // Augment with info if the bus has  been idle for 3 minutes
        stream<VLX, VehicleIdle> VLXWithIdle = IdleVehicleDetection(VLX) {
           param minimumIdle: minutes(3);
+	  sampleLatitude: $sampleLatitude;
        }
 
 
