@@ -17,7 +17,7 @@ use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
  * PublishBusLocation: connects to nextbus and publishes a stream of bus data.
  * This application will ingest that data, and  print out a message to console whenever a bus is within the desired radius of the points.
  */
-composite GeofencingWithPolygons
+public composite GeofencingWithPolygons
 {
 	
 	graph

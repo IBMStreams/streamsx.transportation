@@ -20,7 +20,7 @@ use com.ibm.streams.geospatial.ext::* ;
  * PublishBusLocation: connects to nextbus and publishes a stream of bus data.
  * This application will ingest that data, and  print out a message to console whenever a bus is within the desired radius of the points.
  */
-composite CircularGeofencing{
+public composite CircularGeofencing{
 
 
 

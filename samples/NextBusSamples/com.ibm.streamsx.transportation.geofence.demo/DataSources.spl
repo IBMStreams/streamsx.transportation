@@ -8,7 +8,7 @@ use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
 use com.ibm.streamsx.topology.topic::Publish ;
 use com.ibm.streamsx.transportation.nextbus::AgencyVehicleLocationPoll ;
 
-composite PublishBusLocation {
+public composite PublishBusLocation {
 
 	param
 		//name of NextBus agency to connect to, default is sf because our fences are in San Francisco
@@ -37,7 +37,7 @@ composite PublishBusLocation {
  * Publish POIs under the CurrentPOIs topic,
  * and Polygons under CurrentPolygons topic
  */
-composite GeofenceSource
+public composite GeofenceSource
 {
 	graph
 		stream<POIType> NewPOIAlert = DirectoryWatcher()
@@ -70,7 +70,7 @@ composite GeofenceSource
 
 
 //Reusable composite to watch a directory for updates to files
-composite DirectoryWatcher (output FenceInfo) { 
+public composite DirectoryWatcher (output FenceInfo) { 
 
 param
 	type $FenceType;
