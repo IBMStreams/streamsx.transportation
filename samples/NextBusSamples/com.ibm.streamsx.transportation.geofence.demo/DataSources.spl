@@ -1,0 +1,88 @@
+
+// ************************************************************************
+// * Copyright (C)2018, International Business Machines Corporation and
+// * others. All Rights Reserved.
+// ************************************************************************
+namespace com.ibm.streamsx.transportation.geofence.demo;
+use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
+use com.ibm.streamsx.topology.topic::Publish ;
+use com.ibm.streamsx.transportation.nextbus::AgencyVehicleLocationPoll ;
+
+public composite PublishBusLocation {
+
+	param
+		//name of NextBus agency to connect to, default is sf because our fences are in San Francisco
+		expression<rstring> $agency : getSubmissionTimeValue("agency", "sf-muni");
+
+     graph
+		
+		stream<NextBusLocation> RawLocationStream = AgencyVehicleLocationPoll()
+		{
+			param
+				agency : $agency ;
+				period :(float64) getSubmissionTimeValue("period", "30.0") ;
+		}
+		
+		// Export for use by other analytics
+		() as PublishHangoutDetection = Publish(RawLocationStream)
+		{
+			param
+				topic : "RawBusLocations" ;
+		}
+}
+
+
+/***
+ * Watch both the fences and poi directories for updates to files.
+ * Publish POIs under the CurrentPOIs topic,
+ * and Polygons under CurrentPolygons topic
+ */
+public composite GeofenceSource
+{
+	graph
+		stream<POIType> NewPOIAlert = DirectoryWatcher()
+		{
+			param
+				FenceType : POIType ;
+				directoryToWatch :"poi";
+		}
+
+		() as PublishNewPOI = Publish(NewPOIAlert)
+		{
+			param
+				topic : "CurrentPOIs" ;
+		} 
+		
+		stream<GeofenceAlert> GeofenceStream = DirectoryWatcher()
+		{
+			param
+				FenceType : GeofenceAlert ;
+				directoryToWatch :"fences";
+		}
+
+		() as PublishNewFence = Publish(GeofenceStream)
+		{
+			param
+				topic : "CurrentPolygons" ;
+		}
+
+}
+
+
+//Reusable composite to watch a directory for updates to files
+public composite DirectoryWatcher (output FenceInfo) { 
+
+param
+	type $FenceType;
+	expression<rstring>  $directoryToWatch;
+graph
+	stream<rstring filename> FileStream = DirectoryScan(){
+		param
+		initDelay: 25.0;
+			directory: $directoryToWatch;
+			
+	}
+
+  stream<$FenceType> FenceInfo = FileSource(FileStream)
+    {}
+}

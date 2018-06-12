@@ -1,0 +1,23 @@
+
+// ************************************************************************
+// * Copyright (C)2018, International Business Machines Corporation and
+// * others. All Rights Reserved.
+// ************************************************************************
+namespace com.ibm.streamsx.transportation.geofence.demo;
+use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
+
+type FenceData = rstring fenceId, uint32 fenceUpdateAction,
+	rstring fencePolygon ;
+type Message = rstring message ;
+type GeofenceAlert = FenceData, Message ;
+type CurrentFences = list<rstring> currentFences ;
+type FenceEvents = list<rstring> currentFences, list<rstring> fencesEntered,
+	list<rstring> fencesExited ;
+type LocationAndFenceEvents = NextBusLocation, FenceEvents ;
+type LocationAndFenceData = NextBusLocation, CurrentFences ;
+type POIType = rstring POI_ID, float64 latitude, float64 longitude,
+	float64 radius, rstring message ;
+type POI_WKT_Type = rstring POI_ID, rstring locationWKT, float64 radius,
+	rstring message ;
+type POIMatches = NextBusLocation, tuple<rstring fixedLocationId,
+	float64 distance, rstring message> ;

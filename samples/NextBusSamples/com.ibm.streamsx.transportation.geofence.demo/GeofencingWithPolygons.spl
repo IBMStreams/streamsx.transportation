@@ -1,0 +1,90 @@
+
+// ************************************************************************
+// * Copyright (C)2018, International Business Machines Corporation and
+// * others. All Rights Reserved.
+// ************************************************************************
+namespace com.ibm.streamsx.transportation.geofence.demo ;
+
+use com.ibm.streamsx.topology.topic::* ;
+use com.ibm.streams.geospatial::Geofence ;
+use com.ibm.streamsx.transportation.nextbus::NextBusLocation ;
+/**
+ * Using a polygon for geofencing allows for geofences of arbitrary shape.
+ * The geofences are defined in fences/fences.txt
+ * See README.md for details
+ * This application subscribes to the data streams exported by PublishBusLocation and GeofenceSource.
+ * GeofenceSource : watches the fence directory and publishes a stream of data about the geofences
+ * PublishBusLocation: connects to nextbus and publishes a stream of bus data.
+ * This application will ingest that data, and  print out a message to console whenever a bus is within the desired radius of the points.
+ */
+public composite GeofencingWithPolygons
+{
+	
+	graph
+	//connect to stream of polygons
+		stream<GeofenceAlert> Geofences = Subscribe()
+		{
+			param
+				topic : "CurrentPolygons" ;
+				streamType : GeofenceAlert ;
+		}
+	//connect to NextBus data
+		stream<NextBusLocation> BusLocationStream = Subscribe()
+		{
+			param
+				topic : "RawBusLocations" ;
+				streamType : NextBusLocation ;
+		}
+
+		
+		
+		stream<LocationAndFenceEvents> BusLocationWithEvents =
+			Geofence(BusLocationStream ; Geofences)
+		{
+			param
+				outputMode : events ;
+			output
+				BusLocationWithEvents : currentFences = CurrentFences(), fencesEntered =
+					FencesEntered(), fencesExited = FencesExited() ;
+		}
+		
+		() as AlertPrinter = Custom(BusLocationWithEvents ; Geofences)
+		{
+			logic
+				state :
+				{
+					mutable map<rstring, rstring> fenceAlerts = { } ;
+				}
+
+				onTuple Geofences :
+				{
+				
+				//We have to send the geofence stream to this operator as well,
+				// to be able to look up the message for each geofence
+				//add the geofences to the list
+					insertM(fenceAlerts, Geofences.fenceId, Geofences.message) ;
+				}
+
+				onTuple BusLocationWithEvents :
+				{
+					for(rstring fence in fencesEntered)
+					{
+						printStringLn("Bus " + routeTag + " with id " + id + " entered " + fence +
+							", entry message: " + fenceAlerts [ fence ]) ;
+					}
+
+					for(rstring fence in fencesExited)
+					{
+						printStringLn("Bus " + routeTag + " with id " + id +  " exited " + fence) ;
+					}
+
+				}
+
+			config
+				placement : partitionExlocation("events") ;
+		}
+
+		
+		
+
+}
