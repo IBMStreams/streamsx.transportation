@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="streamsx.transportation" default="all">
+
+    <property environment="env"/>
+    <property name="streams.install" value="${env.STREAMS_INSTALL}"/>
+    <taskdef resource="com/ibm/streamsx/ant/streams.xml"/>
+
+    <property name="toolkit"
+        value="${basedir}/com.ibm.streamsx.transportation"/>
+
+    <target name="all" depends="index,doc"/>
+	
+    <target name ="index">
+        <indextoolkit location="${toolkit}"/>
+    </target>
+
+    <target name="doc">
+	<spldoc location="${toolkit}" compositeGraphs="yes"
+            title="Sample Transportation Toolkit"
+            outputDirectory="${toolkit}/doc"/>
+    </target>
+	
+    <target name="clean">
+        <delete dir="${toolkit}/output"/>
+        <delete file="${toolkit}/toolkit.xml"/>
+        <delete dir="${toolkit}/doc"/>
+    </target>
+</project>
+
