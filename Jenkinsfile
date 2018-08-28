@@ -10,7 +10,7 @@ pipeline {
   post {
     always {
       publishHTML (target: [
-          reportName: 'SPL DOC',
+          reportName: 'SPLDOC',
           reportDir: 'com.ibm.streamsx.transportation/doc',
           reportFiles: 'index.html',
           keepAll: false,
