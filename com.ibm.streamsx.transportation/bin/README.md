@@ -8,7 +8,7 @@
     * `com.ibm.streamsx.transportation` - https://github.com/IBMStreams/streamsx.transportation/releases/tag/v2.0.0.alpha
 1. Unpack archives into `$HOME/toolkits`
 1. In an empty directory (not under $HOME/toolkits) execute to produce three sab files under the subdirectory `sabs`
-    * `$HOME/toolkits/com.ibm.streamsx.transportation/bin/nextbus_build.sh
+    * `$HOME/toolkits/com.ibm.streamsx.transportation/bin/nextbus_build.sh`
 1. Submit each of the `sabs` to your QSE instance, the AgencyLocations will default to `sf-muni`.
 
 1. Open the browser to http://localhost:8080/streamsx.inet.resources/dojo/viewall.html
